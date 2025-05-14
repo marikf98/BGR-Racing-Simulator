@@ -1,5 +1,6 @@
 """
 This example shows how to retrieve lidar pointclouds.
+It uses 7 lidars
 Before running this you must add a lidar to your vehicle.
 Add the following to your settings.json file in the Sensors section:
 
@@ -49,7 +50,7 @@ def transform_lidar_points(points, yaw_deg, pitch_deg=-5.0, roll_deg=0.0):
 
     Returns:
         np.ndarray: Transformed N x 3 array of LiDAR points.
-    """ 
+    """
     # Convert angles from degrees to radians
     yaw = np.deg2rad(yaw_deg)
     pitch = np.deg2rad(pitch_deg)
@@ -106,7 +107,7 @@ def add_gaussian_noise(points, mean=0, variance=0.04 , clip_range=0.02):
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import fsds
 
-# connect to the AirSim simulator 
+# connect to the AirSim simulator
 client = fsds.FSDSClient()
 
 # Check network connection
@@ -120,7 +121,7 @@ lidardata3 = client.getLidarData(lidar_name = 'Lidar3')
 lidardata4 = client.getLidarData(lidar_name = 'Lidar4')
 lidardata5 = client.getLidarData(lidar_name = 'Lidar5')
 lidardata6 = client.getLidarData(lidar_name = 'Lidar6')
-lidardata7 = client.getLidarData(lidar_name = 'Lidar7')
+# lidardata7 = client.getLidarData(lidar_name = 'Lidar7')
 
 point_list1 = lidardata.point_cloud
 point_list2 = lidardata2.point_cloud
@@ -128,7 +129,7 @@ point_list3 = lidardata3.point_cloud
 point_list4 = lidardata4.point_cloud
 point_list5 = lidardata5.point_cloud
 point_list6 = lidardata6.point_cloud
-point_list7 = lidardata6.point_cloud
+# point_list7 = lidardata6.point_cloud
 
 # nanosecond timestamp of when the imu frame was captured
 print("lidardata nano: ", lidardata.time_stamp)
@@ -166,10 +167,6 @@ points6 = numpy.array(point_list6, dtype=numpy.dtype('f4'))
 points6 = numpy.reshape(points6, (int(points6.shape[0]/3), 3))
 points6 = add_gaussian_noise(points6, mean=0, variance=0.04 , clip_range=0.02)
 
-# Convert the list of floats into a list of xyz coordinates
-points7 = numpy.array(point_list7, dtype=numpy.dtype('f4'))
-points7 = numpy.reshape(points7, (int(points7.shape[0]/3), 3))
-
 # stacked_points = np.vstack((points, points2))
 print("number of hit points: ", len(points))
 print("number of hit points: ", len(points2))
@@ -179,13 +176,14 @@ print("number of hit points: ", len(points5))
 print("number of hit points: ", len(points6))
 
 
-mini_lidar_data = [points, points2, points3, points4, points5, points6, points7]
+mini_lidar_data = [points, points2, points3, points4, points5, points6]
 
 # Define the yaw angles for each mini LiDAR (in radians)
 # Assume the horizontal field of view is 115° divided into 6 segments
 fov_horizontal = 115  # Total horizontal field of view in degrees
 n_lidars = 7
 overlap = 2
+
 
 
 # Transform each mini LiDAR's data to the global frame
