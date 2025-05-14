@@ -55,8 +55,6 @@ def DepthConversion(PointDepth, f):
 # Fetch depth image
 responses = client.simGetImages([fsds.ImageRequest(camera_name='Camera1', image_type=fsds.ImageType.DepthPerspective,
                                                    pixels_as_float=True, compress=False)], vehicle_name='FSCar')
-depth_image = airsim.list_to_2d_float_array(responses[0].image_data_float, 768, 1024)
-depth_clipped = np.clip(depth_image, 0.0, 10.0)
 response = responses[0]
 width = response.width
 fov_rad = math.radians(90)  # Assuming 90° HFOV
