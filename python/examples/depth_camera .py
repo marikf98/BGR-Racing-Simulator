@@ -32,8 +32,8 @@ import open3d as o3d
 
 
 ## adds the fsds package located the parent directory to the pyhthon path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
+sys.path.insert(0, r"C:\Users\amitk\Documents\GitHub\BGR-Racing-Simulator\python")
+##TODO add your path to fsds directory in the prev line ^^^^^^^^^
 import time
 import fsds
 
@@ -54,7 +54,14 @@ def DepthConversion(PointDepth, f):
     PlaneDepth = PointDepth / (1 + (DistanceFromCenter / f)**2)**(0.5)
     return PlaneDepth
 
-#
+def add_gaussian_noise(points, mean=0, variance=0.04 , clip_range=0.02):
+    std_dev = np.sqrt(variance)
+    noise = np.random.normal(mean, std_dev, points.shape)
+    if clip_range:
+        noise = np.clip(noise, -clip_range, clip_range)
+    return points + noise
+
+
 # # display 2D depth camera in color scale
 # # Depth clipping range (in meters)
 # min_depth = 1
@@ -63,7 +70,7 @@ def DepthConversion(PointDepth, f):
 # while True:
 #     # Fetch depth image
 #     responses = client.simGetImages([
-#         fsds.ImageRequest(camera_name='Camera1',
+#         fsds.ImageRequest(camera_name='DepthCamera',
 #                           image_type=fsds.ImageType.DepthPerspective,
 #                           pixels_as_float=True,
 #                           compress=False)], vehicle_name='FSCar')
@@ -95,7 +102,7 @@ def DepthConversion(PointDepth, f):
 # cv2.destroyAllWindows()
 
 responses = client.simGetImages([
-        fsds.ImageRequest(camera_name='Camera1',
+        fsds.ImageRequest(camera_name='DepthCamera',
                           image_type=fsds.ImageType.DepthPerspective,
                           pixels_as_float=True,
                           compress=False)], vehicle_name='FSCar')
@@ -105,8 +112,8 @@ width = response.width
 fov_rad = math.radians(90)  # Assuming 90° HFOV
 Fx = Fy = width / (2 * math.tan(fov_rad / 2))
 img1d = np.array(response.image_data_float, dtype=np.float32)
-# TODO cut 50 meters to use only the relevant data
-img1d[img1d > 255] = 255
+max_range = 50
+img1d[img1d > max_range] = max_range
 img2d = np.reshape(img1d, (responses[0].height, responses[0].width))
 img2d_converted = DepthConversion(img2d, Fx)
 
@@ -117,9 +124,14 @@ u, v = np.meshgrid(np.arange(W), np.arange(H))  # Pixel coordinates
 z = img2d_converted
 x = (u - j_c) * z / Fx
 y = (v - i_c) * z / Fy
-#
-# # Stack into Nx3 array
+
+# Stack into Nx3 array
+# Apply noise to your global LiDAR data
+std_dev = 0.02  # 2 cm in meters
+clip_range = 0.02  # Clip noise to ±2 cm
 points = np.stack((x.flatten(), y.flatten(), z.flatten()), axis=-1)
+noisy_global_data = add_gaussian_noise(points, mean=0, variance=6, clip_range=clip_range)
+
 
 import open3d as o3d
 
@@ -128,7 +140,7 @@ point_cloud = o3d.geometry.PointCloud()
 # point_cloud2 = o3d.geometry.PointCloud()
 
 # Assign points to the point cloud object
-point_cloud.points = o3d.utility.Vector3dVector(points)
+point_cloud.points = o3d.utility.Vector3dVector(noisy_global_data)
 # point_cloud2.points = o3d.utility.Vector3dVector(points2)
 # Optionally: Set colors (if you have color data)
 # colors = np.random.rand(num_points, 3)  # Random colors for each point
@@ -136,5 +148,9 @@ point_cloud.points = o3d.utility.Vector3dVector(points)
 rand = random.randint(1, 10000)
 # Visualize the point cloud
 o3d.visualization.draw_geometries([point_cloud])
+
+
+
+
 
 
