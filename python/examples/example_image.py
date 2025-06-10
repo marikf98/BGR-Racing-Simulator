@@ -50,7 +50,7 @@ import numpy as np
 import numpy
 import math
 import matplotlib.pyplot as plt
-import fsds
+from python import fsds
 
 
 ## adds the fsds package located the parent directory to the pyhthon path

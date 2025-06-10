@@ -15,11 +15,11 @@ Add the following to your settings.json file in the Sensors section:
 """
 
 
-## adds the fsds package located the parent directory to the pyhthon path
+## adds the fsds package located the parent directory to the python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import time
-import fsds
+from python import fsds
 
 # connect to the AirSim simulator 
 client = fsds.FSDSClient()

@@ -51,11 +51,10 @@ import matplotlib.pyplot as plt
 
 ## adds the fsds package located the parent directory to the pyhthon path
 # sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-fsds_lib_path = r"C:\Users\amitk\Documents\GitHub\BGR-Racing-Simulator\python"
-##TODO add your path to fsds directory in the prev line ^^^^^^^^^
-sys.path.insert(0, fsds_lib_path)
-import fsds
+# fsds_lib_path = r"C:\Users\barak\PycharmProjects\BGR_SIM\BGR-Racing-Simulator\python"
+# sys.path.insert(0, fsds_lib_path)
 
+from python import fsds
 
 # connect to the simulator 
 client = fsds.FSDSClient()
@@ -161,5 +160,6 @@ while True:
     for cone in cones:
         plt.scatter(x=-1*cone['y'], y=cone['x'])
 
+    
 
 plt.show()
