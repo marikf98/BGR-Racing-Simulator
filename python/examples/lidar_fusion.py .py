@@ -26,6 +26,7 @@ import os
 import time
 import numpy as np
 import numpy
+from python import fsds
 
 
 yaw_angles = [
@@ -104,11 +105,10 @@ def add_gaussian_noise(points, mean=0, variance=0.04 , clip_range=0.02):
 
 
 ## adds the fsds package located the parent directory to the pyhthon path
-fsds_lib_path = r"C:\Users\amitk\Documents\GitHub\BGR-Racing-Simulator\python"
-sys.path.insert(0, fsds_lib_path)
+
 ##TODO add your path to fsds directory in the prev line ^^^^^^^^^
 
-import fsds
+
 
 # connect to the AirSim simulator
 client = fsds.FSDSClient()

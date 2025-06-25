@@ -4,7 +4,7 @@ FSDS / AirSim settings.json Generator
 ==============================================================
 
 This script creates a valid settings.json file for AirSim-based
-Formula Student Driverless Simulator (FSDS) with GPS and IMU sensors.
+Formula Student Driverless Simulator (FSDS) with GPS, IMU and LIDAR sensors.
 
 📌 What it does:
 - Takes a dictionary of sensor configurations
@@ -12,7 +12,7 @@ Formula Student Driverless Simulator (FSDS) with GPS and IMU sensors.
 - Writes everything into a valid settings.json file
 
 ✅ How to use:
-1. Modify the `configurations` dictionary to fit your sensor setup
+1. Modify the `configurations` dictionary and/or "lidar_config"  to fit your sensor setup
 2. Set the desired output path in `output_path`
 3. Run this script 
 4. Place the generated `settings.json` into your AirSim root folder
@@ -24,7 +24,7 @@ Formula Student Driverless Simulator (FSDS) with GPS and IMU sensors.
 import json
 
 # Path to save the settings.json file
-output_path =  r"C:\Repos\BGU\Formola\Home_Asigment\fsds-v2.2.0-windows\settings.json"  # Change this path if needed
+output_path = r"C:\Users\barak\PycharmProjects\BGR-Racing-Simulator\python\api\settings.json"  # Change this path if needed
 
 # User-defined configuration for each sensor
 configurations = {
@@ -42,37 +42,80 @@ configurations = {
         "RelativePosition": [0.5, 0.0, 0.2]  # Relative position of the sensor on the car. [0, 0, 0] is the center of the car.
     }
 }
+# User-defined configuration specifically for Lidar senors
+num_lidars = 6  # Amount of Lidars to be used in simulation
+
+lidar_config = {
+    "enabled": True,
+    "vehicle_name": "FSCar",
+    "SensorSettings": {
+        "X": 1,
+        "Y": 0,
+        "Z": 0.5,
+        "Roll": 0,
+        "Pitch": -15,
+        "Yaw": 0,
+        "NumberOfLasers": 3,
+        "PointsPerScan": 500,
+        "VerticalFOVUpper": 0,
+        "VerticalFOVLower": -7.5,
+        "HorizontalFOVStart": -57.5,
+        "HorizontalFOVEnd": 57.5,
+        "RotationsPerSecond": 10,
+        "DrawDebugPoints": True
+    }
+}
+
+# Add lidar sensors to the configurations dictionary
+for i in range(1, num_lidars + 1):
+    name = "Lidar" if i == 1 else f"Lidar{i}"
+    configurations[name] = {
+        "enabled": lidar_config["enabled"],
+        "sensor_name": name,
+        "vehicle_name": lidar_config["vehicle_name"],
+        "SensorSettings": lidar_config["SensorSettings"].copy()
+    }
 
 # Mapping from sensor type name to AirSim SensorType ID
 SENSOR_TYPE_MAP = {
     "GPS": 3,   # GPS SensorType = 3 in AirSim
-    "IMU": 2    # IMU SensorType = 2 in AirSim
+    "IMU": 2,    # IMU SensorType = 2 in AirSim
+    "LIDAR": 6 # LIDAR SensorType = 6 in AirSim
 }
 
 
 def generate_settings_json(values_dict, output_path="settings.json"):
-    sensors = {}         # Dictionary to store sensor configurations for settings.json
-    vehicle_name = None  # Placeholder for vehicle name (assumed same for all sensors)
+    sensors = {}
+    vehicle_name = None
 
-    # Loop through each sensor (e.g., GPS, IMU)
     for key, config in values_dict.items():
-        name = config["sensor_name"]  # Sensor name to be used as key in JSON
+        name = config["sensor_name"]
 
-        # Build the sensor entry with required fields
+        # Detect sensor type (Lidar vs others)
+        if name.lower().startswith("lidar"):
+            sensor_type = SENSOR_TYPE_MAP["LIDAR"]
+        else:
+            sensor_type = SENSOR_TYPE_MAP.get(key.upper(), 0)
+
+        # Start building sensor block
         sensor_entry = {
-            "SensorType": SENSOR_TYPE_MAP.get(key.upper(), 0),  # Look up the sensor type ID
-            "Enabled": config["enabled"],                       # Whether the sensor is enabled
-            "RelativePosition": config["RelativePosition"]      # Sensor position
+            "SensorType": sensor_type,
+            "Enabled": config["enabled"]
         }
 
-        # Add update_frequency if provided (only for GPS at the moment)
+        # Optional: add position if exists (for GPS/IMU)
+        if "RelativePosition" in config:
+            sensor_entry["RelativePosition"] = config["RelativePosition"]
+
+        # Optional: update frequency for GPS
         if key.upper() == "GPS" and "update_frequency" in config:
             sensor_entry["update_frequency"] = config["update_frequency"]
 
-        # Add the sensor entry to the sensors dictionary
-        sensors[name] = sensor_entry
+        # Optional: Lidar-specific settings
+        if "SensorSettings" in config:
+            sensor_entry.update(config["SensorSettings"])
 
-        # Assume all sensors belong to the same vehicle
+        sensors[name] = sensor_entry
         vehicle_name = config["vehicle_name"]
 
     # Create the full settings structure as required by AirSim
