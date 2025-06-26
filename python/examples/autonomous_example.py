@@ -50,11 +50,8 @@ import math
 import matplotlib.pyplot as plt
 
 ## adds the "fsds" package located the parent directory to the pyhthon path
-
-current_path = os.path.abspath(__file__)
-fsds_lib_path = os.path.dirname(os.path.dirname(current_path))
-sys.path.insert(0, fsds_lib_path )
-import fsds
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import fsds as fsds
 
 
 # connect to the simulator 
