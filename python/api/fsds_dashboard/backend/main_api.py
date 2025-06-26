@@ -41,4 +41,4 @@ def run_autonomy():
 
 
 # To run the server: uvicorn backend.main_api:app --reload
-# server adrress: http://localhost:8000/docs#/default/run_autonomy_drive_post
+# Server adrress: http://localhost:8000/docs#/default/run_autonomy_drive_post
