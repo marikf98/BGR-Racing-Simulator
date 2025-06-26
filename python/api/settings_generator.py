@@ -24,7 +24,7 @@ Formula Student Driverless Simulator (FSDS) with GPS, IMU and LIDAR sensors.
 import json
 
 # Path to save the settings.json file
-output_path = r"C:\Users\barak\PycharmProjects\BGR-Racing-Simulator\python\api\settings.json"  # Change this path if needed
+output_path = r""  # Change this path if needed
 
 # User-defined configuration for each sensor
 configurations = {
