@@ -10,7 +10,7 @@ def launch_simulator():
     global sim_process
     if sim_process is None:
         # Update the path below to match the FSDS.exe location on your system
-        sim_path = r"C:\Repos\BGU\Formola\Home_Asigment\fsds-v2.2.0-windows\FSDS.exe"
+        sim_path = r""
 
         if not os.path.exists(sim_path):
             print("❌ Simulator executable not found at:", sim_path)
