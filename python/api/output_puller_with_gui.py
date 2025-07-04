@@ -66,4 +66,4 @@ if __name__ == "__main__":
 
     field_selector = FieldSelector(client, available_fields)
 
-    FSDS_GUI(client, field_selector.selected_fields, ALL_POTENTIAL_FIELDS)
+    FSDS_GUI(client, field_selector.selected_fields, ALL_POTENTIAL_FIELDS, field_selector.print_to_terminal, field_selector.save_to_csv)
