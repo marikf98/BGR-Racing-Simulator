@@ -5,7 +5,6 @@ import sys
 import csv
 import datetime
 
-
 class FSDS_GUI:
     def __init__(self, client, selected_fields, ALL_POTENTIAL_FIELDS, print_to_terminal=False, save_to_csv=False):
         # Store initialization parameters
@@ -18,10 +17,38 @@ class FSDS_GUI:
         # Initialize the main window
         self.root = tk.Tk()
         self.root.title("FSDS Live Data")
-        self.label_vars = {}  # Store StringVars for each field
-        self.script_process = None  # For external script execution
 
-        # CSV file setup (create file and write headers if saving is enabled)
+        # Create a canvas with vertical scrollbar
+        canvas = tk.Canvas(self.root)
+        scrollbar = tk.Scrollbar(self.root, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        # Create an internal frame inside the canvas
+        self.scrollable_frame = tk.Frame(canvas)
+        canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+
+        # Update scrollregion when the frame changes size
+        self.scrollable_frame.bind(
+            "<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        # Allow scrolling with the mouse wheel
+        self.scrollable_frame.bind_all(
+            "<MouseWheel>",
+            lambda event: canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        )
+        # Resize inner frame width with canvas
+        canvas.bind(
+            "<Configure>",
+            lambda e: canvas.itemconfig(self.scrollable_frame, width=e.width)
+        )
+
+        # Variables for labels
+        self.label_vars = {}
+        self.script_process = None
+
+        # CSV file setup
         self.csv_file = None
         self.csv_writer = None
         if self.save_to_csv:
@@ -31,33 +58,54 @@ class FSDS_GUI:
             self.csv_writer.writerow(["Timestamp"] + self.selected_fields)
 
         # Title label
-        tk.Label(self.root, text="📡 FSDS Vehicle Telemetry", font=("Segoe UI", 14, "bold")).grid(
-            row=0, column=0, columnspan=2, pady=(10, 20)
-        )
+        tk.Label(
+            self.scrollable_frame,
+            text="📡 FSDS Vehicle Telemetry",
+            font=("Segoe UI", 14, "bold")
+        ).grid(row=0, column=0, columnspan=2, pady=(10, 20))
 
         # Create labels for each selected telemetry field
         for row_index, field in enumerate(self.selected_fields, start=1):
-            tk.Label(self.root, text=field + ":", font=("Segoe UI", 10)).grid(
-                row=row_index, column=0, sticky="e", padx=10, pady=5
-            )
+            tk.Label(
+                self.scrollable_frame,
+                text=field + ":",
+                font=("Segoe UI", 10)
+            ).grid(row=row_index, column=0, sticky="e", padx=10, pady=5)
             var = tk.StringVar(value="Loading...")
-            tk.Label(self.root, textvariable=var, font=("Courier New", 10)).grid(
-                row=row_index, column=1, sticky="w", padx=10, pady=5
-            )
+            tk.Label(
+                self.scrollable_frame,
+                textvariable=var,
+                font=("Courier New", 10)
+            ).grid(row=row_index, column=1, sticky="w", padx=10, pady=5)
             self.label_vars[field] = var
 
         # Script path entry
+        last_row = len(self.selected_fields) + 1
         self.script_path_var = tk.StringVar(value="run_my_script.py")
-        tk.Label(self.root, text="Script Path:", font=("Segoe UI", 10)).grid(
-            row=len(self.selected_fields) + 1, column=0, sticky="e", padx=10, pady=10)
-        tk.Entry(self.root, textvariable=self.script_path_var, width=40).grid(
-            row=len(self.selected_fields) + 1, column=1, sticky="w", padx=10, pady=10)
+        tk.Label(
+            self.scrollable_frame,
+            text="Script Path:",
+            font=("Segoe UI", 10)
+        ).grid(row=last_row, column=0, sticky="e", padx=10, pady=10)
+        tk.Entry(
+            self.scrollable_frame,
+            textvariable=self.script_path_var,
+            width=40
+        ).grid(row=last_row, column=1, sticky="w", padx=10, pady=10)
 
         # Buttons to run and stop an external script
-        ttk.Button(self.root, text="▶ Run Script", command=self.run_external_script).grid(
-            row=len(self.selected_fields) + 2, column=0, sticky="e", padx=10, pady=(0, 15))
-        self.stop_button = ttk.Button(self.root, text="⏹ Stop Script", command=self.stop_external_script, state="disabled")
-        self.stop_button.grid(row=len(self.selected_fields) + 2, column=1, sticky="w", padx=10, pady=(0, 15))
+        ttk.Button(
+            self.scrollable_frame,
+            text="▶ Run Script",
+            command=self.run_external_script
+        ).grid(row=last_row+1, column=0, sticky="e", padx=10, pady=(0, 15))
+        self.stop_button = ttk.Button(
+            self.scrollable_frame,
+            text="⏹ Stop Script",
+            command=self.stop_external_script,
+            state="disabled"
+        )
+        self.stop_button.grid(row=last_row+1, column=1, sticky="w", padx=10, pady=(0, 15))
 
         # Handle window close event
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
@@ -71,13 +119,44 @@ class FSDS_GUI:
         try:
             data = {}
 
-            # Fetch sensor data only if relevant fields are selected
-            if any("GPS" in field for field in self.selected_fields):
+            # Fetch sensor data only if the selected fields require them
+            if any(field in self.selected_fields for field in [
+                "GPS Time (ns)",
+                "GPS UTC",
+                "GPS Horizontal Accuracy",
+                "GPS Vertical Accuracy",
+                "GPS Location",
+                "GPS Velocity"
+            ]):
                 data["gps"] = self.client.getGpsData(gps_name="Gps", vehicle_name="FSCar")
-            if any("IMU" in field for field in self.selected_fields):
+
+            if any(field in self.selected_fields for field in [
+                "IMU Time (ns)",
+                "IMU Orientation",
+                "IMU Angular Velocity",
+                "IMU Acceleration"
+            ]):
                 data["imu"] = self.client.getImuData(imu_name="Imu", vehicle_name="FSCar")
-            if any("LiDAR" in field for field in self.selected_fields):
+
+            if any(field in self.selected_fields for field in [
+                "LiDAR Time (ns)",
+                "LiDAR Point Count",
+                "LiDAR Pose"
+            ]):
                 data["lidar"] = self.client.getLidarData(lidar_name="Lidar", vehicle_name="FSCar")
+
+            if any(field in self.selected_fields for field in [
+                "Ground Speed Time (ns)",
+                "Ground Speed Linear Velocity"
+            ]):
+                data["ground_speed"] = self.client.getGroundSpeedData(
+                    sensor_name="GroundSpeed",
+                    vehicle_name="FSCar"
+                )
+
+            # Always fetch car, environment, and referee data
+            data["car_state"] = self.client.getCarState(vehicle_name="FSCar")
+            data["referee"] = self.client.getRefereeState()
 
             row_values = []
             # Process and display each selected field
@@ -93,14 +172,14 @@ class FSDS_GUI:
 
             # Print data to terminal if enabled
             if self.print_to_terminal:
-                print(", ".join(f"{field}: {val}" for field, val in zip(self.selected_fields, row_values)))
+                print(", ".join(f"{field}: {val}" for field, val in zip(self.selected_fields, row_values))
+                )
 
             # Save data to CSV if enabled
             if self.save_to_csv and self.csv_writer:
                 timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 self.csv_writer.writerow([timestamp] + row_values)
-                self.csv_file.flush()  # <--- ADD THIS
-
+                self.csv_file.flush()
 
         except Exception as e:
             print(f"Connection error: {e}")
